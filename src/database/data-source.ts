@@ -7,6 +7,7 @@ import { Role } from "../modules/users/entities/role.entity";
 import { UserProfile } from "../modules/users/entities/users-profile.entity";
 import { UserRole } from "../modules/users/entities/user-role.entity";
 import { User } from "../modules/users/entities/user.entity";
+import { EmailVerificationToken } from "../modules/auth/entities/email-verification-token.entity";
 
 export const AppDataSource = new DataSource({
   type: "postgres",
@@ -21,7 +22,7 @@ export const AppDataSource = new DataSource({
   synchronize: false,
   logging: env.NODE_ENV === "development",
 
-  entities: [User, UserProfile, Role, UserRole],
+  entities: [User, UserProfile, Role, UserRole, EmailVerificationToken],
 
   migrations: [`${__dirname}/../migrations/*.{ts,js}`],
 

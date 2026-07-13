@@ -33,6 +33,26 @@ const envSchema = z.object({
   LOG_LEVEL: z
     .enum(["fatal", "error", "warn", "info", "debug", "trace", "silent"])
     .default("info"),
+  SMTP_HOST: z.string().optional(),
+
+  SMTP_PORT: z.coerce.number().int().positive().default(587),
+
+  SMTP_SECURE: z
+    .enum(["true", "false"])
+    .default("false")
+    .transform((value) => value === "true"),
+
+  SMTP_USER: z.string().optional(),
+
+  SMTP_PASSWORD: z.string().optional(),
+
+  EMAIL_FROM: z.string().default("AutoLease <no-reply@autolease.com>"),
+
+  EMAIL_VERIFICATION_EXPIRES_MINUTES: z.coerce
+    .number()
+    .int()
+    .positive()
+    .default(30),
 });
 
 const parsedEnv = envSchema.safeParse(process.env);

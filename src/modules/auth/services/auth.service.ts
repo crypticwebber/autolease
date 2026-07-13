@@ -7,6 +7,7 @@ import { User } from "../../users/entities/user.entity";
 import { AuthProvider, UserStatus } from "../../users/entities/user.enums";
 import type { RegisterInput } from "../validators/register.validator";
 import { passwordService } from "./password.service";
+import { emailVerificationService } from "./email-verification.service";
 
 interface RegisteredUser {
   id: string;
@@ -40,68 +41,87 @@ export class AuthService {
 
     const passwordHash = await passwordService.hash(input.password);
 
-    return AppDataSource.transaction(async (transactionManager) => {
-      const userRepository = transactionManager.getRepository(User);
+    const registeredUser = await AppDataSource.transaction(
+      async (transactionManager) => {
+        const userRepository = transactionManager.getRepository(User);
 
-      const profileRepository = transactionManager.getRepository(UserProfile);
+        const profileRepository = transactionManager.getRepository(UserProfile);
 
-      const roleRepository = transactionManager.getRepository(Role);
+        const roleRepository = transactionManager.getRepository(Role);
 
-      const userRoleRepository = transactionManager.getRepository(UserRole);
+        const userRoleRepository = transactionManager.getRepository(UserRole);
 
-      const role = await roleRepository.findOne({
-        where: {
-          name: input.role,
-        },
-      });
+        const role = await roleRepository.findOne({
+          where: {
+            name: input.role,
+          },
+        });
 
-      if (!role) {
-        throw new AppError(
-          "The selected account role is unavailable",
-          500,
-          "ROLE_NOT_CONFIGURED",
-        );
-      }
+        if (!role) {
+          throw new AppError(
+            "The selected account role is unavailable",
+            500,
+            "ROLE_NOT_CONFIGURED",
+          );
+        }
 
-      const user = userRepository.create({
-        firstName: input.firstName,
-        lastName: input.lastName,
-        email: normalizedEmail,
-        phone: input.phone ?? null,
-        passwordHash,
-        authProvider: AuthProvider.LOCAL,
-        status: UserStatus.PENDING_VERIFICATION,
-        emailVerified: false,
-      });
+        const user = userRepository.create({
+          firstName: input.firstName,
+          lastName: input.lastName,
+          email: normalizedEmail,
+          phone: input.phone ?? null,
+          passwordHash,
+          authProvider: AuthProvider.LOCAL,
+          status: UserStatus.PENDING_VERIFICATION,
+          emailVerified: false,
+        });
 
-      const savedUser = await userRepository.save(user);
+        const savedUser = await userRepository.save(user);
 
-      const profile = profileRepository.create({
-        userId: savedUser.id,
-        country: "Nigeria",
-      });
+        const profile = profileRepository.create({
+          userId: savedUser.id,
+          country: "Nigeria",
+        });
 
-      await profileRepository.save(profile);
+        await profileRepository.save(profile);
 
-      const userRole = userRoleRepository.create({
-        userId: savedUser.id,
-        roleId: role.id,
-      });
+        const userRole = userRoleRepository.create({
+          userId: savedUser.id,
+          roleId: role.id,
+        });
 
-      await userRoleRepository.save(userRole);
+        await userRoleRepository.save(userRole);
 
-      return {
-        id: savedUser.id,
-        firstName: savedUser.firstName,
-        lastName: savedUser.lastName,
-        email: savedUser.email,
-        phone: savedUser.phone,
-        role: role.name,
-        status: savedUser.status,
-        emailVerified: savedUser.emailVerified,
-        createdAt: savedUser.createdAt,
-      };
+        return {
+          id: savedUser.id,
+          firstName: savedUser.firstName,
+          lastName: savedUser.lastName,
+          email: savedUser.email,
+          phone: savedUser.phone,
+          role: role.name,
+          status: savedUser.status,
+          emailVerified: savedUser.emailVerified,
+          createdAt: savedUser.createdAt,
+        };
+      },
+    );
+    const persistedUser = await AppDataSource.getRepository(User).findOne({
+      where: {
+        id: registeredUser.id,
+      },
     });
+
+    if (!persistedUser) {
+      throw new AppError(
+        "Registered user could not be loaded",
+        500,
+        "USER_RELOAD_FAILED",
+      );
+    }
+
+    await emailVerificationService.createAndSendToken(persistedUser);
+
+    return registeredUser;
   }
 }
 
