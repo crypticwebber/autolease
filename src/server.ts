@@ -1,31 +1,54 @@
 import "reflect-metadata";
-import "dotenv/config";
 
 import { createApp } from "./app";
+import { env } from "./config/env";
+import {
+  closeDatabase,
+  initializeDatabase,
+} from "./database/initialize-database";
 
-const port = Number(process.env.PORT ?? 5000);
-const app = createApp();
+const startServer = async (): Promise<void> => {
+  try {
+    await initializeDatabase();
 
-const server = app.listen(port, () => {
-  console.log(`AutoLease API running on port ${port}`);
-});
+    const app = createApp();
 
-const shutdown = (signal: string): void => {
-  console.log(`${signal} received. Closing server...`);
+    const server = app.listen(env.PORT, () => {
+      console.log(`${env.APP_NAME} API running on port ${env.PORT}`);
+    });
 
-  server.close((error) => {
-    if (error) {
-      console.error("Failed to close HTTP server", error);
-      process.exit(1);
-    }
+    const shutdown = async (signal: string): Promise<void> => {
+      console.log(`${signal} received. Shutting down...`);
 
-    console.log("HTTP server closed");
-    process.exit(0);
-  });
+      server.close(async (serverError) => {
+        if (serverError) {
+          console.error("Failed to close HTTP server", serverError);
+          process.exit(1);
+        }
+
+        try {
+          await closeDatabase();
+          process.exit(0);
+        } catch (databaseError) {
+          console.error("Failed to close database connection", databaseError);
+
+          process.exit(1);
+        }
+      });
+    };
+
+    process.on("SIGINT", () => {
+      void shutdown("SIGINT");
+    });
+
+    process.on("SIGTERM", () => {
+      void shutdown("SIGTERM");
+    });
+  } catch (error) {
+    console.error("Failed to start AutoLease API", error);
+    process.exit(1);
+  }
 };
-
-process.on("SIGTERM", () => shutdown("SIGTERM"));
-process.on("SIGINT", () => shutdown("SIGINT"));
 
 process.on("uncaughtException", (error) => {
   console.error("Uncaught exception", error);
@@ -36,3 +59,5 @@ process.on("unhandledRejection", (reason) => {
   console.error("Unhandled rejection", reason);
   process.exit(1);
 });
+
+void startServer();
