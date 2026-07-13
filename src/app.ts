@@ -4,7 +4,10 @@ import express, { type Express, type Request, type Response } from "express";
 import helmet from "helmet";
 import pinoHttp from "pino-http";
 
+import { errorHandler } from "./common/middlewares/error-handler.middleware";
+import { notFoundHandler } from "./common/middlewares/not-found.middleware";
 import { env } from "./config/env";
+import { apiRouter } from "./routes";
 
 export const createApp = (): Express => {
   const app = express();
@@ -24,7 +27,12 @@ export const createApp = (): Express => {
 
   app.use(compression());
   app.use(express.json({ limit: "1mb" }));
-  app.use(express.urlencoded({ extended: false, limit: "1mb" }));
+  app.use(
+    express.urlencoded({
+      extended: false,
+      limit: "1mb",
+    }),
+  );
   app.use(pinoHttp());
 
   app.get("/health", (_request: Request, response: Response) => {
@@ -39,6 +47,11 @@ export const createApp = (): Express => {
       },
     });
   });
+
+  app.use("/api/v1", apiRouter);
+
+  app.use(notFoundHandler);
+  app.use(errorHandler);
 
   return app;
 };
