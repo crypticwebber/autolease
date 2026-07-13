@@ -12,10 +12,10 @@
     "test:watch": "jest --watch",
     "test:coverage": "jest --coverage",
     "typeorm": "typeorm-ts-node-commonjs",
-    "migration:generate": "npm run typeorm -- migration:generate -d src/database/data-source.ts",
-    "migration:create": "npm run typeorm -- migration:create",
+    "migration:generate": "npm run typeorm -- migration:generate src/migrations/InitialUserSchema -d src/database/data-source.ts",
     "migration:run": "npm run typeorm -- migration:run -d src/database/data-source.ts",
-    "migration:revert": "npm run typeorm -- migration:revert -d src/database/data-source.ts"
+    "migration:revert": "npm run typeorm -- migration:revert -d src/database/data-source.ts",
+    "migration:show": "npm run typeorm -- migration:show -d src/database/data-source.ts"
   },
   "engines": {
     "node": ">=22"
@@ -57,7 +57,8 @@
     "@types/multer": "^2.2.0",
     "@types/node": "^26.1.1",
     "@types/nodemailer": "^8.0.1",
+    "ts-node": "^10.9.2",
     "tsx": "^4.23.1",
-    "typescript": "^7.0.2"
+    "typescript": "^5.9.3"
   }
 }
