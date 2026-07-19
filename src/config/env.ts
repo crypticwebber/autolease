@@ -53,6 +53,14 @@ const envSchema = z.object({
     .int()
     .positive()
     .default(30),
+
+  JWT_ACCESS_SECRET: z.string().min(32),
+
+  JWT_REFRESH_SECRET: z.string().min(32),
+
+  JWT_ACCESS_EXPIRES_IN: z.string(),
+
+  JWT_REFRESH_EXPIRES_IN: z.string(),
 });
 
 const parsedEnv = envSchema.safeParse(process.env);

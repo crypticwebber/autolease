@@ -8,6 +8,7 @@ import { UserProfile } from "../modules/users/entities/users-profile.entity";
 import { UserRole } from "../modules/users/entities/user-role.entity";
 import { User } from "../modules/users/entities/user.entity";
 import { EmailVerificationToken } from "../modules/auth/entities/email-verification-token.entity";
+import { RefreshToken } from "../modules/auth/entities/refresh-token.entity";
 
 export const AppDataSource = new DataSource({
   type: "postgres",
@@ -22,7 +23,14 @@ export const AppDataSource = new DataSource({
   synchronize: false,
   logging: env.NODE_ENV === "development",
 
-  entities: [User, UserProfile, Role, UserRole, EmailVerificationToken],
+  entities: [
+    User,
+    UserProfile,
+    Role,
+    UserRole,
+    EmailVerificationToken,
+    RefreshToken,
+  ],
 
   migrations: [`${__dirname}/../migrations/*.{ts,js}`],
 
